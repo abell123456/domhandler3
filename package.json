@@ -1,0 +1,33 @@
+{
+  "name": "domhandler3",
+  "version": "0.0.1",
+  "description": "htmlparser3 helpers",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [
+    "dom",
+    "domhandler"
+  ],
+  "dependencies": {
+    "domelementtype": "1"
+  },
+  "devDependencies": {
+    "htmlparser3": "^0.x",
+    "mocha": "1",
+    "jshint": "~2.3.0"
+  },
+  "jshintConfig": {
+    "quotmark": "double",
+    "trailing": true,
+    "unused": true,
+    "undef": true,
+    "node": true,
+    "proto": true,
+    "globals": {
+      "it": true
+    }
+  },
+  "readmeFilename": "readme.md"
+}
