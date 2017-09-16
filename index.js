@@ -5,12 +5,12 @@ var re_whitespace = /\s+/g;
 var NodePrototype = require("./lib/node");
 var ElementPrototype = require("./lib/element");
 
-function DomHandler(callback, options, elementCB) {
-	if (typeof callback === "object") {
+function DomHandler(callback, options, elementCB){
+	if(typeof callback === "object"){
 		elementCB = options;
 		options = callback;
 		callback = null;
-	} else if (typeof options === "function") {
+	} else if(typeof options === "function"){
 		elementCB = options;
 		options = defaultOpts;
 	}
@@ -27,66 +27,56 @@ function DomHandler(callback, options, elementCB) {
 var defaultOpts = {
 	normalizeWhitespace: false, //Replace all whitespace with single spaces
 	withStartIndices: false, //Add startIndex properties to nodes
-	withEndIndices: false, //Add endIndex properties to nodes
 };
 
-DomHandler.prototype.onparserinit = function(parser) {
+DomHandler.prototype.onparserinit = function(parser){
 	this._parser = parser;
 };
 
 //Resets the handler back to starting state
-DomHandler.prototype.onreset = function() {
+DomHandler.prototype.onreset = function(){
 	DomHandler.call(this, this._callback, this._options, this._elementCB);
 };
 
 //Signals the handler that parsing is done
-DomHandler.prototype.onend = function() {
-	if (this._done) return;
+DomHandler.prototype.onend = function(){
+	if(this._done) return;
 	this._done = true;
 	this._parser = null;
 	this._handleCallback(null);
 };
 
 DomHandler.prototype._handleCallback =
-	DomHandler.prototype.onerror = function(error) {
-		if (typeof this._callback === "function") {
-			this._callback(error, this.dom);
-		} else {
-			if (error) throw error;
-		}
-	};
-
-DomHandler.prototype.onclosetag = function() {
-	//if(this._tagStack.pop().name !== name) this._handleCallback(Error("Tagname didn't match!"));
-
-	var elem = this._tagStack.pop();
-
-	if (this._options.withEndIndices) {
-		elem.endIndex = this._parser.endIndex;
+DomHandler.prototype.onerror = function(error){
+	if(typeof this._callback === "function"){
+		this._callback(error, this.dom);
+	} else {
+		if(error) throw error;
 	}
-
-	if (this._elementCB) this._elementCB(elem);
 };
 
-DomHandler.prototype._addDomElement = function(element) {
+DomHandler.prototype.onclosetag = function(){
+	//if(this._tagStack.pop().name !== name) this._handleCallback(Error("Tagname didn't match!"));
+	var elem = this._tagStack.pop();
+	if(this._elementCB) this._elementCB(elem);
+};
+
+DomHandler.prototype._addDomElement = function(element){
 	var parent = this._tagStack[this._tagStack.length - 1];
 	var siblings = parent ? parent.children : this.dom;
 	var previousSibling = siblings[siblings.length - 1];
 
 	element.next = null;
 
-	if (this._options.withStartIndices) {
+	if(this._options.withStartIndices){
 		element.startIndex = this._parser.startIndex;
-	}
-	if (this._options.withEndIndices) {
-		element.endIndex = this._parser.endIndex;
 	}
 
 	if (this._options.withDomLvl1) {
 		element.__proto__ = element.type === "tag" ? ElementPrototype : NodePrototype;
 	}
 
-	if (previousSibling) {
+	if(previousSibling){
 		element.prev = previousSibling;
 		previousSibling.next = element;
 	} else {
@@ -97,61 +87,51 @@ DomHandler.prototype._addDomElement = function(element) {
 	element.parent = parent || null;
 };
 
-DomHandler.prototype.onopentag = function(name, attrs) {
+DomHandler.prototype.onopentag = function(name, attribs, keyOnlyAttribs){
 	var element = {
 		type: name === "script" ? ElementType.Script : name === "style" ? ElementType.Style : ElementType.Tag,
 		name: name,
-		attrs: attrs,
-		children: []
+		attribs: attribs,
+        children: [],
+        keyOnlyAttribs,
 	};
 
-	// Tips: 添加进属性的处理
-	if (this._options.attribTransforms) {
-		if (typeof this._options.attribTransforms === 'function') {
-			attrs = this._options.attribTransforms.call(this, attrs);
-		} else if (this._options.attribTransforms[name]) {
-			attrs = this._options.attribTransforms[name].call(this, attrs);
-		}
+	if(this._options.attribTransforms && this._options.attribTransforms[name]) {
+		attribs = this._options.attribTransforms[name].call(this, attribs);
 	}
-
 
 	this._addDomElement(element);
 
 	this._tagStack.push(element);
-
-	// Tips: 添加进hooks函数处理
-	if (this._options.onopentag && typeof this._options.onopentag === 'function') {
-		this._options.onopentag(element);
-	}
 };
 
-DomHandler.prototype.ontext = function(data) {
+DomHandler.prototype.ontext = function(data){
 	//the ignoreWhitespace is officially dropped, but for now,
 	//it's an alias for normalizeWhitespace
 	var normalize = this._options.normalizeWhitespace || this._options.ignoreWhitespace;
 
 	var lastTag;
 
-	if (!this._tagStack.length && this.dom.length && (lastTag = this.dom[this.dom.length - 1]).type === ElementType.Text) {
-		if (normalize) {
+	if(!this._tagStack.length && this.dom.length && (lastTag = this.dom[this.dom.length-1]).type === ElementType.Text){
+		if(normalize){
 			lastTag.data = (lastTag.data + data).replace(re_whitespace, " ");
 		} else {
 			lastTag.data += data;
 		}
 	} else {
-		if (
+		if(
 			this._tagStack.length &&
 			(lastTag = this._tagStack[this._tagStack.length - 1]) &&
 			(lastTag = lastTag.children[lastTag.children.length - 1]) &&
 			lastTag.type === ElementType.Text
-		) {
-			if (normalize) {
+		){
+			if(normalize){
 				lastTag.data = (lastTag.data + data).replace(re_whitespace, " ");
 			} else {
 				lastTag.data += data;
 			}
 		} else {
-			if (normalize) {
+			if(normalize){
 				data = data.replace(re_whitespace, " ");
 			}
 
@@ -163,10 +143,10 @@ DomHandler.prototype.ontext = function(data) {
 	}
 };
 
-DomHandler.prototype.oncomment = function(data) {
+DomHandler.prototype.oncomment = function(data){
 	var lastTag = this._tagStack[this._tagStack.length - 1];
 
-	if (lastTag && lastTag.type === ElementType.Comment) {
+	if(lastTag && lastTag.type === ElementType.Comment){
 		lastTag.data += data;
 		return;
 	}
@@ -180,7 +160,7 @@ DomHandler.prototype.oncomment = function(data) {
 	this._tagStack.push(element);
 };
 
-DomHandler.prototype.oncdatastart = function() {
+DomHandler.prototype.oncdatastart = function(){
 	var element = {
 		children: [{
 			data: "",
@@ -193,11 +173,11 @@ DomHandler.prototype.oncdatastart = function() {
 	this._tagStack.push(element);
 };
 
-DomHandler.prototype.oncommentend = DomHandler.prototype.oncdataend = function() {
+DomHandler.prototype.oncommentend = DomHandler.prototype.oncdataend = function(){
 	this._tagStack.pop();
 };
 
-DomHandler.prototype.onprocessinginstruction = function(name, data) {
+DomHandler.prototype.onprocessinginstruction = function(name, data){
 	this._addDomElement({
 		name: name,
 		data: data,
